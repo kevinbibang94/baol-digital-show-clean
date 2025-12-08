@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://uuqrmugxdlnvoquqwipu.supabase.co'
-const supabaseAnonKey = 'sb_publishable__K3a3OMxvWg-WuZ13Fx9eg_-4y2V8gZ'
+// On récupère les variables d'environnement définies dans Netlify ou dans ton .env.local
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)

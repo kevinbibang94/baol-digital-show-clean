@@ -64,10 +64,10 @@ export default function CommentsPanel() {
               prev.map(item =>
                 item.id === c.id
                   ? {
-                      ...item,
-                      likes: c.likes ?? item.likes,
-                      ago: formatAgo(c.created_at)
-                    }
+                    ...item,
+                    likes: c.likes ?? item.likes,
+                    ago: formatAgo(c.created_at)
+                  }
                   : item
               )
             )
@@ -125,6 +125,10 @@ export default function CommentsPanel() {
     }
     setSending(true)
     setMsg(null)
+
+    // 🔍 Vérification des variables d’environnement
+    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
+    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY)
 
     const { error } = await supabase.from('comments').insert([
       { text, author: name || 'Anonyme', email, likes: 0 }
