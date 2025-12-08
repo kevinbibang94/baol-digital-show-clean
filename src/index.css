@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  @apply bg-slate-950 text-slate-100 min-h-screen font-sans antialiased;
+  overflow-x: hidden;
+}
+
+a {
+  @apply text-brand-400 hover:text-brand-300 transition-colors duration-200;
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+@layer utilities {
+  .bg-grid {
+    background-image: radial-gradient(
+        circle at 1px 1px,
+        rgba(255, 255, 255, 0.05) 1px,
+        transparent 0
+      ),
+      radial-gradient(
+        circle at 1px 1px,
+        rgba(255, 255, 255, 0.04) 1px,
+        transparent 0
+      );
+    background-size: 40px 40px, 80px 80px;
+  }
+
+  .glass {
+    @apply bg-white/5 border border-white/10 backdrop-blur-xl;
+  }
+
+  .animate-marquee {
+    animation: marquee-smooth 40s linear infinite;
+  }
+
+  .animate-marquee-slow {
+    animation: marquee-smooth 50s linear infinite;
+  }
+
+  .animate-slide {
+    animation: slide 20s linear infinite;
+  }
+
+  /* Parallax helper */
+  .parallax-img {
+    will-change: transform;
+    transform: translateY(0);
+    transition: transform 0.15s linear;
+  }
+}
+
+@keyframes marquee-smooth {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
