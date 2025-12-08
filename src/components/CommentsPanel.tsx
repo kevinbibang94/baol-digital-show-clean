@@ -130,9 +130,31 @@ export default function CommentsPanel() {
     console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
     console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY)
 
-    const { error } = await supabase.from('comments').insert([
-      { text, author: name || 'Anonyme', email, likes: 0 }
-    ])
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([{ text, author: name || 'Anonyme', email, likes: 0 }])
+        .select()
+
+      if (error) {
+        console.error('Insert error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        })
+        setMsg('Erreur d’envoi — réessayez')
+      } else {
+        setText('')
+        setName('')
+        setEmail('')
+        setMsg('Merci — commentaire ajouté')
+      }
+    } catch (e) {
+      console.error('Insert exception:', e)
+      setMsg('Erreur d’envoi — réessayez')
+    }
+
 
     if (!error) {
       setText('')
