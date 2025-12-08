@@ -1,33 +1,121 @@
 import { useState, useEffect } from 'react'
-import { feedbackEndpoint } from '../data'
+import { supabase } from '../lib/supabaseClient'
 
 type Comment = {
   id: string
   author: string
   text: string
+  email?: string
   ago: string
   likes?: number
+  created_at?: string
 }
 
-const INITIAL: Comment[] = [
-  { id: 'c1', author: 'Amadou', text: "Super reportage — très instructif, merci aux équipes !", ago: '2 days ago', likes: 12 },
-  { id: 'c2', author: 'Fatou', text: "J'ai beaucoup aimé les interviews, très pertinentes.", ago: '5 days ago', likes: 4 },
-  { id: 'c3', author: 'Moussa', text: "Peut-on retrouver les slides des conférences ?", ago: '1 week ago', likes: 1 },
-]
-
 export default function CommentsPanel() {
-  const [comments, setComments] = useState<Comment[]>(() => {
-    try {
-      const raw = localStorage.getItem('comments_local')
-      if (raw) return JSON.parse(raw)
-    } catch (e) {}
-    return INITIAL
-  })
+  const [comments, setComments] = useState<Comment[]>([])
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchComments()
+
+    // Rafraîchir automatiquement "ago" toutes les 60 secondes
+    const interval = setInterval(() => {
+      setComments(prev =>
+        prev.map(c => ({
+          ...c,
+          ago: c.created_at ? formatAgo(c.created_at) : c.ago
+        }))
+      )
+    }, 60000)
+
+    // 🔴 Realtime listener Supabase
+    const channel = supabase
+      .channel('comments-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        payload => {
+          if (payload.eventType === 'INSERT') {
+            const c: any = payload.new
+            setComments(prev => [
+              {
+                id: c.id,
+                author: c.author || 'Anonyme',
+                text: c.text,
+                email: c.email || '',
+                created_at: c.created_at,
+                ago: formatAgo(c.created_at),
+                likes: c.likes ?? 0
+              },
+              ...prev
+            ])
+            // Afficher un toast
+            setToast(`Nouveau commentaire de ${c.author || 'Anonyme'}`)
+            setTimeout(() => setToast(null), 4000)
+          }
+          if (payload.eventType === 'UPDATE') {
+            const c: any = payload.new
+            setComments(prev =>
+              prev.map(item =>
+                item.id === c.id
+                  ? {
+                      ...item,
+                      likes: c.likes ?? item.likes,
+                      ago: formatAgo(c.created_at)
+                    }
+                  : item
+              )
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  // Fonction utilitaire pour calculer "il y a X temps"
+  function formatAgo(dateString: string): string {
+    const date = new Date(dateString)
+    const diff = Date.now() - date.getTime()
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (seconds < 60) return `il y a ${seconds} sec`
+    if (minutes < 60) return `il y a ${minutes} min`
+    if (hours < 24) return `il y a ${hours} h`
+    return `il y a ${days} j`
+  }
+
+  async function fetchComments() {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (!error && data) {
+      const formatted = data.map((c: any) => ({
+        id: c.id,
+        author: c.author || 'Anonyme',
+        text: c.text,
+        email: c.email || '',
+        created_at: c.created_at,
+        ago: formatAgo(c.created_at),
+        likes: c.likes ?? 0
+      }))
+      setComments(formatted)
+    }
+  }
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault()
@@ -38,56 +126,46 @@ export default function CommentsPanel() {
     setSending(true)
     setMsg(null)
 
-    try {
-      const envEndpoint =
-        (typeof import.meta !== 'undefined' &&
-          (import.meta as any).env &&
-          (import.meta as any).env.VITE_FEEDBACK_ENDPOINT) ||
-        ''
-      const endpoint = envEndpoint || feedbackEndpoint || ''
+    const { error } = await supabase.from('comments').insert([
+      { text, author: name || 'Anonyme', email, likes: 0 }
+    ])
 
-      if (endpoint) {
-        const fd = new FormData()
-        fd.append('name', name)
-        fd.append('email', email)
-        fd.append('comment', text)
-        fd.append('page', 'Reportage : Baol Digital Show')
-        const res = await fetch(endpoint, { method: 'POST', body: fd })
-        if (!res.ok) throw new Error('network')
-        const n = { id: String(Date.now()), author: name || 'Anonyme', text, ago: 'À l’instant', likes: 0 }
-        setComments([n, ...comments])
-        setName('')
-        setEmail('')
-        setText('')
-        setMsg('Merci — commentaire ajouté')
-      } else {
-        const n = { id: String(Date.now()), author: name || 'Anonyme', text, ago: 'À l’instant', likes: 0 }
-        const next = [n, ...comments]
-        setComments(next)
-        try {
-          localStorage.setItem('comments_local', JSON.stringify(next))
-        } catch (e) {}
-        setMsg('Commentaire enregistré localement')
-        setName('')
-        setEmail('')
-        setText('')
-      }
-    } catch (err) {
-      console.error(err)
+    if (!error) {
+      setText('')
+      setName('')
+      setEmail('')
+      setMsg('Merci — commentaire ajouté')
+    } else {
       setMsg('Erreur d’envoi — réessayez')
-    } finally {
-      setSending(false)
+    }
+
+    setSending(false)
+  }
+
+  async function likeComment(id: string, currentLikes: number) {
+    const { error } = await supabase
+      .from('comments')
+      .update({ likes: currentLikes + 1 })
+      .eq('id', id)
+
+    if (!error) {
+      setComments(prev =>
+        prev.map(c =>
+          c.id === id ? { ...c, likes: (c.likes ?? 0) + 1 } : c
+        )
+      )
     }
   }
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('comments_local', JSON.stringify(comments))
-    } catch (e) {}
-  }, [comments])
-
   return (
-    <div className="rounded-2xl border border-white/6 bg-slate-950/30 p-4">
+    <div className="rounded-2xl border border-white/6 bg-slate-950/30 p-4 relative">
+      {/* Toast notification */}
+      {toast && (
+        <div className="absolute top-2 right-2 bg-brand-500 text-slate-900 px-4 py-2 rounded-md shadow-lg text-sm font-semibold animate-bounce">
+          {toast}
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-3">
         <div className="font-semibold text-white">Commentaires</div>
         <div className="flex items-center gap-3">
@@ -138,8 +216,23 @@ export default function CommentsPanel() {
                 <div className="text-sm font-semibold text-white">{c.author}</div>
                 <div className="text-xs text-slate-400">{c.ago}</div>
               </div>
+              {c.email && (
+                <div className="text-xs italic text-slate-400">
+                  <a href={`mailto:${c.email}`} className="hover:underline">
+                    {c.email}
+                  </a>
+                </div>
+              )}
               <div className="text-sm text-slate-300 mt-1">{c.text}</div>
-              <div className="mt-2 text-xs text-slate-400">{c.likes ?? 0} likes</div>
+              <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                {c.likes ?? 0} likes
+                <button
+                  onClick={() => likeComment(c.id, c.likes ?? 0)}
+                  className="text-brand-400 hover:text-brand-300 ml-2"
+                >
+                  👍 J’aime
+                </button>
+              </div>
             </div>
           </div>
         ))}
