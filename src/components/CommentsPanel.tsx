@@ -118,55 +118,45 @@ export default function CommentsPanel() {
   }
 
   async function submit(e?: React.FormEvent) {
-    e?.preventDefault()
-    if (!text.trim()) {
-      setMsg('Le commentaire est vide')
-      return
-    }
-    setSending(true)
-    setMsg(null)
+  e?.preventDefault()
+  if (!text.trim()) {
+    setMsg('Le commentaire est vide')
+    return
+  }
+  setSending(true)
+  setMsg(null)
 
-    // 🔍 Vérification des variables d’environnement
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
-    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY)
+  // 🔍 Vérification des variables d’environnement
+  console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
+  console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY)
 
-    try {
-      const { data, error } = await supabase
-        .from('comments')
-        .insert([{ text, author: name || 'Anonyme', email, likes: 0 }])
-        .select()
+  try {
+    const { error } = await supabase
+      .from('comments')
+      .insert([{ text, author: name || 'Anonyme', email, likes: 0 }])
 
-      if (error) {
-        console.error('Insert error:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        })
-        setMsg('Erreur d’envoi — réessayez')
-      } else {
-        setText('')
-        setName('')
-        setEmail('')
-        setMsg('Merci — commentaire ajouté')
-      }
-    } catch (e) {
-      console.error('Insert exception:', e)
+    if (error) {
+      console.error('Insert error:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
       setMsg('Erreur d’envoi — réessayez')
-    }
-
-
-    if (!error) {
+    } else {
       setText('')
       setName('')
       setEmail('')
       setMsg('Merci — commentaire ajouté')
-    } else {
-      setMsg('Erreur d’envoi — réessayez')
     }
-
-    setSending(false)
+  } catch (e) {
+    console.error('Insert exception:', e)
+    setMsg('Erreur d’envoi — réessayez')
   }
+
+  setSending(false)
+}
+
 
   async function likeComment(id: string, currentLikes: number) {
     const { error } = await supabase
