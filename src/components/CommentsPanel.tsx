@@ -61,10 +61,10 @@ export default function CommentsPanel() {
               prev.map(item =>
                 item.id === c.id
                   ? {
-                      ...item,
-                      likes: c.likes ?? item.likes,
-                      ago: formatAgo(c.created_at)
-                    }
+                    ...item,
+                    likes: c.likes ?? item.likes,
+                    ago: formatAgo(c.created_at)
+                  }
                   : item
               )
             )
@@ -237,7 +237,7 @@ export default function CommentsPanel() {
               )}
               <div className="text-sm text-slate-300 mt-1">{c.text}</div>
               <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                {c.likes ?? 0} likes
+                {c.likes === 1 ? '1 like' : `${c.likes ?? 0} likes`}
                 <button
                   onClick={() => likeComment(c.id, c.likes ?? 0)}
                   className="text-brand-400 hover:text-brand-300 ml-2"
