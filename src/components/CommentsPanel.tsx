@@ -98,24 +98,30 @@ export default function CommentsPanel() {
   }
 
   async function fetchComments() {
-    const { data, error } = await supabase
-      .from('comments')
-      .select('*')
-      .order('created_at', { ascending: false })
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, author, text, email, created_at, likes')
+    .order('created_at', { ascending: false })
 
-    if (!error && data) {
-      const formatted = data.map((c: any) => ({
-        id: c.id,
-        author: c.author || 'Anonyme',
-        text: c.text,
-        email: c.email || '',
-        created_at: c.created_at,
-        ago: formatAgo(c.created_at),
-        likes: c.likes ?? 0
-      }))
-      setComments(formatted)
-    }
+  if (error) {
+    console.error('Fetch error:', error)
+    return
   }
+
+  if (data) {
+    const formatted = data.map((c: any) => ({
+      id: c.id,
+      author: c.author || 'Anonyme',
+      text: c.text,
+      email: c.email || '',
+      created_at: c.created_at,
+      ago: formatAgo(c.created_at),
+      likes: c.likes ?? 0
+    }))
+    setComments(formatted)
+  }
+}
+
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault()
