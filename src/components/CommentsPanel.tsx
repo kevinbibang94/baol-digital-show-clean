@@ -23,7 +23,6 @@ export default function CommentsPanel() {
   useEffect(() => {
     fetchComments()
 
-    // Rafraîchir automatiquement "ago" toutes les 60 secondes
     const interval = setInterval(() => {
       setComments(prev =>
         prev.map(c => ({
@@ -33,7 +32,6 @@ export default function CommentsPanel() {
       )
     }, 60000)
 
-    // 🔴 Realtime listener Supabase
     const channel = supabase
       .channel('comments-changes')
       .on(
@@ -54,7 +52,6 @@ export default function CommentsPanel() {
               },
               ...prev
             ])
-            // Afficher un toast
             setToast(`Nouveau commentaire de ${c.author || 'Anonyme'}`)
             setTimeout(() => setToast(null), 4000)
           }
@@ -64,10 +61,10 @@ export default function CommentsPanel() {
               prev.map(item =>
                 item.id === c.id
                   ? {
-                    ...item,
-                    likes: c.likes ?? item.likes,
-                    ago: formatAgo(c.created_at)
-                  }
+                      ...item,
+                      likes: c.likes ?? item.likes,
+                      ago: formatAgo(c.created_at)
+                    }
                   : item
               )
             )
@@ -82,7 +79,6 @@ export default function CommentsPanel() {
     }
   }, [])
 
-  // Fonction utilitaire pour calculer "il y a X temps"
   function formatAgo(dateString: string): string {
     const date = new Date(dateString)
     const diff = Date.now() - date.getTime()
@@ -98,30 +94,29 @@ export default function CommentsPanel() {
   }
 
   async function fetchComments() {
-  const { data, error } = await supabase
-    .from('comments')
-    .select('id, author, text, email, created_at, likes')
-    .order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('comments')
+      .select('id, author, text, email, created_at, likes')
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    console.error('Fetch error:', error)
-    return
+    if (error) {
+      console.error('Fetch error:', error)
+      return
+    }
+
+    if (data) {
+      const formatted = data.map((c: any) => ({
+        id: c.id,
+        author: c.author || 'Anonyme',
+        text: c.text,
+        email: c.email || '',
+        created_at: c.created_at,
+        ago: formatAgo(c.created_at),
+        likes: c.likes ?? 0
+      }))
+      setComments(formatted)
+    }
   }
-
-  if (data) {
-    const formatted = data.map((c: any) => ({
-      id: c.id,
-      author: c.author || 'Anonyme',
-      text: c.text,
-      email: c.email || '',
-      created_at: c.created_at,
-      ago: formatAgo(c.created_at),
-      likes: c.likes ?? 0
-    }))
-    setComments(formatted)
-  }
-}
-
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault()
@@ -132,24 +127,18 @@ export default function CommentsPanel() {
     setSending(true)
     setMsg(null)
 
-    // 🔍 Vérification des variables d’environnement
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
-    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY)
-
     try {
       const { error } = await supabase
         .from('comments')
         .insert([{ text, author: name || 'Anonyme', email, likes: 0 }])
 
       if (error) {
-        console.error('Insert error:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        })
+        console.error('Insert error:', error)
         setMsg('Erreur d’envoi — réessayez')
       } else {
+        // 🔥 Rafraîchir immédiatement après insertion
+        await fetchComments()
+
         setText('')
         setName('')
         setEmail('')
@@ -163,8 +152,6 @@ export default function CommentsPanel() {
     setSending(false)
   }
 
-
-
   async function likeComment(id: string, currentLikes: number) {
     const { error } = await supabase
       .from('comments')
@@ -177,12 +164,13 @@ export default function CommentsPanel() {
           c.id === id ? { ...c, likes: (c.likes ?? 0) + 1 } : c
         )
       )
+      // 🔥 Rafraîchir pour persister après reload
+      await fetchComments()
     }
   }
 
   return (
     <div className="rounded-2xl border border-white/6 bg-slate-950/30 p-4 relative">
-      {/* Toast notification */}
       {toast && (
         <div className="absolute top-2 right-2 bg-brand-500 text-slate-900 px-4 py-2 rounded-md shadow-lg text-sm font-semibold animate-bounce">
           {toast}
@@ -228,7 +216,8 @@ export default function CommentsPanel() {
         </div>
       </form>
 
-      <div className="space-y-3">
+      {/* 🔥 Scroll interne pour limiter la hauteur */}
+      <div className="space-y-3 max-h-[400px] overflow-y-auto">
         {comments.map(c => (
           <div key={c.id} className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-400 flex items-center justify-center text-sm font-medium text-slate-900">
