@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import "./CommentsPanel.css"
 
 type Comment = {
   id: string
@@ -10,7 +11,6 @@ type Comment = {
   likes?: number
   created_at?: string
 }
-
 export default function CommentsPanel() {
   const [comments, setComments] = useState<Comment[]>([])
   const [name, setName] = useState('')
@@ -19,7 +19,6 @@ export default function CommentsPanel() {
   const [sending, setSending] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-
   useEffect(() => {
     fetchComments()
 
@@ -61,10 +60,10 @@ export default function CommentsPanel() {
               prev.map(item =>
                 item.id === c.id
                   ? {
-                    ...item,
-                    likes: c.likes ?? item.likes,
-                    ago: formatAgo(c.created_at)
-                  }
+                      ...item,
+                      likes: c.likes ?? item.likes,
+                      ago: formatAgo(c.created_at)
+                    }
                   : item
               )
             )
@@ -78,6 +77,13 @@ export default function CommentsPanel() {
       supabase.removeChannel(channel)
     }
   }, [])
+
+  useEffect(() => {
+    if (msg) {
+      const timeout = setTimeout(() => setMsg(null), 3000)
+      return () => clearTimeout(timeout)
+    }
+  }, [msg])
 
   function formatAgo(dateString: string): string {
     const date = new Date(dateString)
@@ -136,9 +142,7 @@ export default function CommentsPanel() {
         console.error('Insert error:', error)
         setMsg('Erreur d’envoi — réessayez')
       } else {
-        // 🔥 Rafraîchir immédiatement après insertion
         await fetchComments()
-
         setText('')
         setName('')
         setEmail('')
@@ -153,26 +157,39 @@ export default function CommentsPanel() {
   }
 
   async function likeComment(id: string, currentLikes: number) {
+    if (localStorage.getItem(`liked_${id}`)) {
+      setToast("Vous avez déjà liké ce commentaire")
+      setTimeout(() => setToast(null), 3000)
+      return
+    }
+
     const { error } = await supabase
       .from('comments')
       .update({ likes: currentLikes + 1 })
       .eq('id', id)
 
-    if (!error) {
-      setComments(prev =>
-        prev.map(c =>
-          c.id === id ? { ...c, likes: (c.likes ?? 0) + 1 } : c
-        )
-      )
-      // 🔥 Rafraîchir pour persister après reload
-      await fetchComments()
+    if (error) {
+      console.error('Like error:', error.message)
+      setToast("Erreur lors du like")
+      setTimeout(() => setToast(null), 3000)
+      return
     }
-  }
 
+    setComments(prev =>
+      prev.map(c =>
+        c.id === id ? { ...c, likes: (c.likes ?? 0) + 1 } : c
+      )
+    )
+
+    localStorage.setItem(`liked_${id}`, 'true')
+
+    setToast("Merci pour votre like !")
+    setTimeout(() => setToast(null), 3000)
+  }
   return (
-    <div className="rounded-2xl border border-white/6 bg-slate-950/30 p-4 relative">
+    <div className="comments-panel rounded-2xl border border-white/6 bg-slate-950/30 p-4 relative">
       {toast && (
-        <div className="absolute top-2 right-2 bg-brand-500 text-slate-900 px-4 py-2 rounded-md shadow-lg text-sm font-semibold animate-bounce">
+        <div className="toast absolute top-2 right-2 bg-brand-500 text-slate-900 px-4 py-2 rounded-md shadow-lg text-sm font-semibold animate-bounce">
           {toast}
         </div>
       )}
@@ -183,8 +200,7 @@ export default function CommentsPanel() {
           <div className="text-sm text-slate-300">{comments.length}</div>
         </div>
       </div>
-
-      <form onSubmit={submit} className="space-y-3 mb-4">
+      <form onSubmit={submit} className="comments-form space-y-3 mb-4 animate-fadeIn">
         <input
           placeholder="Nom (optionnel)"
           value={name}
@@ -215,18 +231,16 @@ export default function CommentsPanel() {
           <div className="text-sm text-slate-300">{msg}</div>
         </div>
       </form>
-
-      {/* 🔥 Scroll interne pour limiter la hauteur */}
       <div className="space-y-3 max-h-[400px] overflow-y-auto">
         {comments.map(c => (
-          <div key={c.id} className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand-400 flex items-center justify-center text-sm font-medium text-slate-900">
+          <div key={c.id} className="comment-item flex items-start gap-3">
+            <div className="comment-avatar">
               {c.author[0]}
             </div>
-            <div className="flex-1">
+            <div className="comment-content flex-1">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-white">{c.author}</div>
-                <div className="text-xs text-slate-400">{c.ago}</div>
+                <div className="comment-author">{c.author}</div>
+                <div className="comment-meta">{c.ago}</div>
               </div>
               {c.email && (
                 <div className="text-xs italic text-slate-400">
@@ -235,12 +249,12 @@ export default function CommentsPanel() {
                   </a>
                 </div>
               )}
-              <div className="text-sm text-slate-300 mt-1">{c.text}</div>
-              <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+              <div className="comment-text mt-1">{c.text}</div>
+              <div className="comment-actions mt-2 flex items-center gap-2 text-xs text-slate-400">
                 {c.likes === 1 ? '1 like' : `${c.likes ?? 0} likes`}
                 <button
                   onClick={() => likeComment(c.id, c.likes ?? 0)}
-                  className="text-brand-400 hover:text-brand-300 ml-2"
+                  className="text-brand-400 hover:text-brand-300 ml-2 transition-transform duration-200 active:scale-125"
                 >
                   👍 J’aime
                 </button>

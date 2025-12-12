@@ -85,3 +85,12 @@ a {
     transform: translateX(-100%);
   }
 }
+
+/* Masquer les scrollbars horizontales pour un look clean sur mobile */
+.scrollbar-hide {
+  scrollbar-width: none;            /* Firefox */
+  -ms-overflow-style: none;         /* IE 10+ */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;                    /* Chrome, Safari, Opera */
+}

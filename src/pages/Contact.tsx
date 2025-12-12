@@ -1,11 +1,12 @@
-import { googleFormUrl } from '../data'
-import { useState } from 'react'
+// src/pages/Contact.tsx
+import { googleFormUrl } from "../data"
+import { useState } from "react"
 
 function ContactForm() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [subject, setSubject] = useState('')
-  const [message, setMessage] = useState('')
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [subject, setSubject] = useState("")
+  const [message, setMessage] = useState("")
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -17,154 +18,155 @@ function ContactForm() {
     const formspreeEndpoint = (import.meta as any)?.env?.VITE_FORMSPREE_ENDPOINT?.trim()
 
     if (formspreeEndpoint) {
-      // Submit to Formspree endpoint (serverless) when configured
       setSubmitting(true)
       try {
         const payload = { name, email, subject, message }
         const res = await fetch(formspreeEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
 
         if (res.ok) {
           setSent(true)
-          setName('')
-          setEmail('')
-          setSubject('')
-          setMessage('')
+          setName("")
+          setEmail("")
+          setSubject("")
+          setMessage("")
         } else {
-          const text = await res.text().catch(() => '')
+          const text = await res.text().catch(() => "")
           setError(`Erreur d'envoi (${res.status}) ${text}`)
         }
-      } catch (err) {
-        setError('Erreur réseau — veuillez réessayer.')
+      } catch {
+        setError("Erreur réseau — veuillez réessayer.")
       } finally {
         setSubmitting(false)
       }
-
       return
     }
 
-    // Fallback: open user's mail client via mailto:
+    // Fallback mailto si pas d’endpoint Formspree
     const body = `Nom: ${name}\r\nEmail: ${email}\r\n\r\n${message}`
     const mailto = `mailto:marketingsolutionscenter.msc@gmail.com?subject=${encodeURIComponent(
-      subject || 'Contact - Baol Digital Show'
+      subject || "Contact - Baol Digital Show"
     )}&body=${encodeURIComponent(body)}`
     window.location.href = mailto
     setSent(true)
   }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-3 sm:space-y-4 glass rounded-2xl p-4 sm:p-6"
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <label className="block">
+        <label htmlFor="name" className="block">
           <span className="text-xs text-slate-300">Nom</span>
           <input
+            id="name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100"
+            className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100 focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition"
             placeholder="Votre nom"
           />
         </label>
-        <label className="block">
+        <label htmlFor="email" className="block">
           <span className="text-xs text-slate-300">Email</span>
           <input
+            id="email"
             required
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100"
+            className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100 focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition"
             placeholder="you@email.com"
           />
         </label>
       </div>
 
-      <label className="block">
+      <label htmlFor="subject" className="block">
         <span className="text-xs text-slate-300">Objet</span>
         <input
+          id="subject"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100"
+          className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100 focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition"
           placeholder="Sujet de votre message"
         />
       </label>
 
-      <label className="block">
+      <label htmlFor="message" className="block">
         <span className="text-xs text-slate-300">Message</span>
         <textarea
+          id="message"
           required
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100 min-h-[100px] sm:min-h-[140px]"
+          className="mt-1 w-full rounded-lg bg-white/3 border border-white/5 px-3 py-2 text-sm text-slate-100 min-h-[100px] sm:min-h-[140px] focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition"
           placeholder="Écrivez votre message ici"
         />
       </label>
-
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex items-center disabled:opacity-60 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 text-sm font-semibold"
+          className="inline-flex items-center disabled:opacity-60 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 text-sm font-semibold transition"
         >
-          {submitting ? 'Envoi…' : 'Envoyer'}
+          {submitting ? (
+            <span className="flex items-center gap-2">
+              <svg
+                className="animate-spin h-4 w-4 text-white"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                />
+              </svg>
+              Envoi…
+            </span>
+          ) : (
+            "Envoyer"
+          )}
         </button>
-
-        {/* Show Formspree status: only show the admin/config link in dev, show status badge otherwise */}
-        {(() => {
-          const endpoint = (import.meta as any)?.env?.VITE_FORMSPREE_ENDPOINT?.trim()
-          const isDev = (import.meta as any)?.env?.DEV
-
-          if (endpoint) {
-            return (
-              <span className="inline-flex items-center rounded-xl border border-white/10 bg-white/3 text-sm text-slate-100 px-3 py-2">
-                Envoi via site activé
-              </span>
-            )
-          }
-
-          if (isDev) {
-            return (
-              <a
-                href="https://formspree.io/"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center rounded-xl border border-white/10 text-sm text-slate-200 px-3 py-2"
-              >
-                Configurer Formspree
-              </a>
-            )
-          }
-
-          return (
-            <div className="flex items-center gap-3">
-              <span
-                className="inline-flex items-center rounded-xl border border-white/10 text-sm text-slate-400 px-3 py-2"
-                title="Formulaire non configuré — configuration réservée à l'administration"
-              >
-                Formulaire non configuré
-              </span>
-              <span className="text-sm text-slate-300">Pas de formulaire en ligne — utilisez l'email ci-dessus pour nous contacter.</span>
-            </div>
-          )
-        })()}
       </div>
 
       {sent && (
-        <p className="text-sm text-emerald-400">Message envoyé avec succès.</p>
+        <p
+          aria-live="polite"
+          className="flex items-center gap-2 text-sm text-emerald-400"
+        >
+          ✅ Message envoyé avec succès.
+        </p>
       )}
 
-      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {error && (
+        <p
+          aria-live="polite"
+          className="flex items-center gap-2 text-sm text-rose-400"
+        >
+          ⚠️ {error}
+        </p>
+      )}
     </form>
   )
 }
-
 export default function ContactPage() {
   return (
     <main>
       <section className="border-b border-white/5 bg-slate-900/30 py-10 sm:py-12 lg:py-16">
         <div className="container grid gap-6 sm:gap-8 lg:gap-10 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
+          
+          {/* Colonne gauche : infos + formulaire */}
           <div className="space-y-3 sm:space-y-4">
             <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-brand-300">
               Contact
@@ -176,12 +178,16 @@ export default function ContactPage() {
               Besoin d'informations sur les billets, les partenariats ou les
               ateliers privés ? Écrivez-nous ou passez par WhatsApp.
             </p>
+
+            {/* Liens directs */}
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               <a
                 className="glass flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold transition hover:border-brand-400/60 gap-2"
                 href="mailto:marketingsolutionscenter.msc@gmail.com?subject=Baol%20Digital%20Show"
               >
-                <span className="text-slate-100 break-all">marketingsolutionscenter.msc@gmail.com</span>
+                <span className="text-slate-100 break-all">
+                  marketingsolutionscenter.msc@gmail.com
+                </span>
                 <span className="text-brand-300">Email</span>
               </a>
               <a
@@ -205,14 +211,18 @@ export default function ContactPage() {
                 <span className="text-brand-300">Ouvrir</span>
               </a>
             </div>
+
+            {/* Formulaire */}
             <div className="mt-6 sm:mt-8">
               <ContactForm />
             </div>
+
+            {/* Horaires */}
             <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 text-xs sm:text-sm text-slate-300">
               Horaires : 09:00 - 18:30 • Centre Baol Digital, Dakar
             </div>
           </div>
-
+          {/* Colonne droite : carte Google Maps */}
           <div className="glass overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 h-48 sm:h-64 lg:h-[420px]">
             <iframe
               title="Google Maps - Baol Digital"

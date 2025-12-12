@@ -1,0 +1,39 @@
+.thumbnail {
+  transition: transform 0.5s ease;
+}
+.thumbnail:hover {
+  transform: scale(1.03);
+}
+
+.video-frame {
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+.views-counter.updated {
+  animation: pulse 0.4s ease-in-out;
+}
+
+.like-button.voted,
+.dislike-button.voted {
+  animation: bounce 0.3s ease;
+  box-shadow: 0 0 0.5em currentColor;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.2); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}

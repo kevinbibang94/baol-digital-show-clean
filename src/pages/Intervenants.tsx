@@ -1,14 +1,17 @@
-import { motion } from 'framer-motion'
-import { useState } from 'react'
-import { speakers } from '../data'
+import { motion } from "framer-motion"
+import { useState } from "react"
+import { speakers } from "../data"
+import SpeakerModal from "../components/SpeakerModal"
 
 export default function IntervenantsPage() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedSpeaker, setSelectedSpeaker] = useState(null)
 
-  const filteredSpeakers = speakers.filter(speaker =>
-    speaker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    speaker.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    speaker.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSpeakers = speakers.filter(
+    (speaker) =>
+      speaker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      speaker.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      speaker.title.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -24,8 +27,7 @@ export default function IntervenantsPage() {
                 Des profils tech, design & business
               </h1>
               <p className="max-w-2xl text-sm sm:text-base text-slate-300">
-                Un mix de talks, cas concrets et ateliers guidés par des
-                praticiens.
+                Un mix de talks, cas concrets et ateliers guidés par des praticiens.
               </p>
             </div>
             <div className="flex gap-3">
@@ -38,7 +40,6 @@ export default function IntervenantsPage() {
             </div>
           </div>
 
-          {/* Barre de recherche */}
           <div className="max-w-md">
             <input
               type="text"
@@ -49,10 +50,11 @@ export default function IntervenantsPage() {
             />
           </div>
 
-          {/* Résultats */}
           <div>
             <p className="text-xs sm:text-sm text-slate-400 mb-4">
-              {filteredSpeakers.length} intervenant{filteredSpeakers.length !== 1 ? 's' : ''} trouvé{filteredSpeakers.length !== 1 ? 's' : ''}
+              {filteredSpeakers.length} intervenant
+              {filteredSpeakers.length !== 1 ? "s" : ""} trouvé
+              {filteredSpeakers.length !== 1 ? "s" : ""}
             </p>
             <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {filteredSpeakers.map((speaker, index) => (
@@ -60,9 +62,14 @@ export default function IntervenantsPage() {
                   key={speaker.name}
                   initial={{ opacity: 0, y: 18 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-80px' }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="glass relative flex h-full flex-col gap-2 sm:gap-3 rounded-2xl overflow-hidden p-4 sm:p-5"
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 0.4, delay: index * 0.08, ease: "easeOut" }}
+                  onClick={() => setSelectedSpeaker(speaker)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Voir détails de ${speaker.name}`}
+                  className="glass relative flex h-full flex-col gap-2 sm:gap-3 rounded-2xl overflow-hidden p-4 sm:p-5 
+                             hover:scale-[1.02] hover:shadow-[0_0_12px_theme(colors.brand.400)] transition-transform duration-200 cursor-pointer"
                 >
                   <div className="absolute right-3 top-3 sm:right-4 sm:top-4 text-xs text-brand-300">
                     #{index + 1}
@@ -70,7 +77,8 @@ export default function IntervenantsPage() {
                   <div className="relative h-40 sm:h-32 w-full overflow-hidden rounded-xl mb-2">
                     <img
                       src={speaker.image}
-                      alt={speaker.name}
+                      alt={`Photo de ${speaker.name}`}
+                      aria-label={`Photo de ${speaker.name}`}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -114,6 +122,13 @@ export default function IntervenantsPage() {
               ))}
             </div>
           </div>
+
+          {/* Modal pour afficher les détails */}
+          <SpeakerModal
+            isOpen={!!selectedSpeaker}
+            onClose={() => setSelectedSpeaker(null)}
+            speaker={selectedSpeaker}
+          />
         </div>
       </section>
     </main>

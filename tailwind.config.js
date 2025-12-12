@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+    './src/index.css', // ← Ajouté pour que Tailwind compile les utilitaires comme .scrollbar-hide
+  ],
   theme: {
     container: {
       center: true,
@@ -32,4 +36,3 @@ export default {
   },
   plugins: [],
 }
-
